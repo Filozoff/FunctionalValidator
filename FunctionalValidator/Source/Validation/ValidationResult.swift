@@ -8,6 +8,13 @@
 import Foundation
 
 enum ValidationResult<Error> where Error: Swift.Error {
-	case invalid([Error])
+	case invalid(Error)
 	case valid
+
+	var isValid: Bool {
+		switch self {
+		case .invalid: return false
+		case .valid: return true
+		}
+	}
 }

@@ -10,24 +10,105 @@ import XCTest
 
 class FunctionalValidatorTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+	// MARK: - default
+
+	func test_whenValidateCalled_thenReturnsValidResult() throws {
+
+		// when
+		let result = Validator<String, Error>().validate(value: "")
+
+		// then
+		XCTAssertTrue(result.isValid)
+	}
+
+	// MARK: - map
+
+	func test_givenMapAndInvalidValue_whenValidateCalled_thenReturnsInvalidResult() {
+
+		// given
+		let value = "hobbs&shaw"
+		let validator = Validator<String, StubError>()
+			.map({ Double($0) }, error: .one)
+
+		// when
+		let result = validator.validate(value: value)
+
+		// then
+		XCTAssertFalse(result.isValid)
+		XCTAssertValidationInvalid(result, .one)
+	}
+
+	func test_givenMapAndValidValue_whenValidateCalled_thenReturnsValidResult() throws {
+
+		// given
+		let value = "5"
+		let validator = Validator<String, StubError>()
+			.map({ Double($0) }, error: .one)
+
+		// when
+		let result = validator.validate(value: value)
+
+		// then
+		XCTAssertTrue(result.isValid)
+		XCTAssertValidationValid(result)
+	}
+
+	// MARK: - match
+
+    func test_givenMatchAndInvalidValue_whenValidateCalled_thenReturnsInvalidResult() throws {
+
+		// given
+		let value = "15"
+		let validator = Validator<String, StubError>()
+			.match(rule: .isEqual(to: "5"), error: .common)
+
+		// when
+		let result = validator.validate(value: value)
+
+		// then
+		XCTAssertFalse(result.isValid)
+		XCTAssertValidationInvalid(result, .common)
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+	func test_givenMatchAndValidValue_whenValidateCalled_thenReturnsValidResult() throws {
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
+		// given
+		let value = "5"
+		let validator = Validator<String, StubError>()
+			.match(rule: .isEqual(to: value), error: .common)
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
-    }
+		// when
+		let result = validator.validate(value: value)
 
+		// then
+		XCTAssertTrue(result.isValid)
+		XCTAssertValidationValid(result)
+	}
+
+	// MARK: - chain
+
+	func test_givenValidationChainAndInvalidValue_whenValidateCalled_thenValidationResultInvalidWithErrorInOrder() {
+
+		// given
+		let value = "5"
+		let validator = Validator<String, StubError>()
+			.match(rule: .isEqual(to: "1"), error: .one)
+			.match(rule: .isEqual(to: "2"), error: .two)
+			.match(rule: .isEqual(to: "3"), error: .three)
+
+		// when
+		let result = validator.validate(value: value)
+
+		// then
+		XCTAssertFalse(result.isValid)
+		XCTAssertValidationInvalid(result, .one)
+	}
+}
+
+private enum StubError: Swift.Error {
+	case common
+	case one
+	case two
+	case three
+	case four
 }
